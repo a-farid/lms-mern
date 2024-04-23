@@ -15,5 +15,7 @@ app.get("/test", (req: Request, res: Response, next: NextFunction) => {
 });
 
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
-  res.status(404).json({ message: "Not Found" });
+  const err = new Error(`Route with url ${req.originalUrl} not found`);
+  res.status(404);
+  next(err);
 });
