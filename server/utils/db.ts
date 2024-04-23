@@ -1,5 +1,4 @@
 import mongoose, { set } from 'mongoose'
-require('dotenv').config()
 
 const dbURI:string = process.env.DB_URI || ''
 
@@ -13,7 +12,6 @@ const connectDB = async () => {
     } catch (error: any) {
         console.error(error.message)
         setTimeout(connectDB,5000)
-        
     }
 }
 
