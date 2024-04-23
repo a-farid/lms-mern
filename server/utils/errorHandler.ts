@@ -1,6 +1,6 @@
 class ErrorHandler extends Error {
   statusCode: number;
-  constructor(statusCode: number, message: string) {
+  constructor(message: string, statusCode: number) {
     super(message);
     this.statusCode = statusCode;
 
@@ -8,8 +8,8 @@ class ErrorHandler extends Error {
   }
 }
 
- export default ErrorHandler;
+export default ErrorHandler;
 
- /* By including Error.captureStackTrace() in the constructor,
+/* By including Error.captureStackTrace() in the constructor,
     you ensure that whenever an instance of ErrorHandler is created,
     the stack trace is captured and associated with that instance */
