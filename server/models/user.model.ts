@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const regExpEmail: RegExp = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
 
@@ -15,6 +16,8 @@ export interface IUser extends Document {
   isVerified: boolean;
   courses: Array<{ courseId: string }>;
   comparePassword: (password: string) => Promise<boolean>;
+  SignAccessToken: () => string;
+  SignRefreshToken: () => string;
 }
 
 const userSchema: Schema = new mongoose.Schema<IUser>(
@@ -37,8 +40,8 @@ const userSchema: Schema = new mongoose.Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Please enter your password"],
       minlength: [6, "Your password must be longer than 6 characters"],
+      select: false,
     },
     avatar: {
       public_id: String,
@@ -52,19 +55,7 @@ const userSchema: Schema = new mongoose.Schema<IUser>(
       type: Boolean,
       default: false,
     },
-    courses: [
-      {
-        courseId: String,
-      },
-    ],
-    // courses: [
-    //   {
-    //     courseId: {
-    //       type: Schema.Types.ObjectId,
-    //       ref: "Course",
-    //     },
-    //   },
-    // ],
+    courses: [{ courseId: String }],
   },
   { timestamps: true }
 );
@@ -78,8 +69,17 @@ userSchema.pre<IUser>("save", async function (next) {
 });
 
 // Comparing the password
-userSchema.methods.comparePassword = async function (enteredPassword: string) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.comparePassword = async function (pwd: string) {
+  return await bcrypt.compare(pwd, this.password);
+};
+
+// Generating JWT token
+userSchema.methods.SignAccessToken = function () {
+  return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN!);
+};
+
+userSchema.methods.SignRefreshToken = function () {
+  return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN!);
 };
 
 const userModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);

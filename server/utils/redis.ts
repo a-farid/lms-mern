@@ -1,10 +1,11 @@
-import {Redis} from 'ioredis';
+require("dotenv").config();
+import { Redis } from "ioredis";
 
 const redisClient = () => {
-    if(process.env.REDIS_URL) {
-        return process.env.REDIS_URL;
-    }
-    throw new Error(`Redis client not found`)
-    }
+  if (process.env.REDIS_URI) {
+    return process.env.REDIS_URI!;
+  }
+  throw new Error(`Redis client not found`);
+};
 
-export const redis =  new Redis(redisClient())
+export const redis = new Redis(redisClient());
