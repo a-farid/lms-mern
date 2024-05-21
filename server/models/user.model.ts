@@ -25,12 +25,14 @@ const userSchema: Schema = new mongoose.Schema<IUser>(
     name: {
       type: String,
       required: [true, "Please enter your name"],
+      set: (v: string) => v.toLowerCase(),
       maxLength: [30, "Your name cannot exceed 30 characters"],
     },
     email: {
       type: String,
       required: [true, "Please enter your email"],
       unique: true,
+      set: (v: string) => v.toLowerCase(),
       validate: {
         validator: function (v: string) {
           return regExpEmail.test(v);
@@ -82,6 +84,6 @@ userSchema.methods.SignRefreshToken = function () {
   return jwt.sign({ id: this._id }, process.env.REFRESH_TOKEN!);
 };
 
-const userModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+const UserModel: Model<IUser> = mongoose.model<IUser>("User", userSchema);
 
-export default userModel;
+export default UserModel;

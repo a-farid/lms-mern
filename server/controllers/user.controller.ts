@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import userModel, { IUser } from "../models/user.model";
+import UserModel, { IUser } from "../models/user.model";
 import ErrorHandler from "../utils/errorHandler";
 import { catchAsyncErrors } from "../middleware/catchAsyncErrors";
 import jwt from "jsonwebtoken";
@@ -21,7 +21,7 @@ export const userRegister = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { name, email, password } = req.body;
-      const isEmailExist = await userModel.findOne({ email });
+      const isEmailExist = await UserModel.findOne({ email });
 
       if (isEmailExist)
         return next(new ErrorHandler("Email already exists", 400));
@@ -81,13 +81,13 @@ export const userActivation = catchAsyncErrors(
         return next(new ErrorHandler("Invalid activation code", 400));
       }
 
-      const userExist = await userModel.findOne({ email: newUser.user.email });
+      const userExist = await UserModel.findOne({ email: newUser.user.email });
 
       if (userExist) {
         return next(new ErrorHandler("Email already exists", 400));
       }
 
-      const user = await userModel.create({ ...newUser.user });
+      const user = await UserModel.create({ ...newUser.user });
 
       res.status(201).json({
         success: true,
@@ -108,7 +108,7 @@ export const userLogin = catchAsyncErrors(
       return next(new ErrorHandler("Please enter email and password", 400));
     }
 
-    const user = await userModel.findOne({ email }).select("+password");
+    const user = await UserModel.findOne({ email }).select("+password");
     if (!user) {
       return next(new ErrorHandler("Invalid email or password", 401));
     }
@@ -125,7 +125,7 @@ export const userLogout = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     res.cookie("access_Token", "", { maxAge: 1 });
     res.cookie("refresh_ Token", "", { maxAge: 1 });
-    await redis.del(req.user?._id);
+    await redis.del(`user:${req.user?._id}`);
     res.status(200).json({
       success: true,
       message: "Logged out",
@@ -148,8 +148,8 @@ export const updateAccessToken = catchAsyncErrors(
     )) as { id: string };
     if (!decoded) return next(new ErrorHandler("Invalid token", 401));
 
-    const redisUser = await redis.get(decoded.id);
-    const user = await userModel.findById(decoded.id);
+    const redisUser = await redis.get(`user:${decoded.id}`);
+    const user = await UserModel.findById(decoded.id);
     if (!user) return next(new ErrorHandler("User not found", 404));
 
     const accessToken = user.SignAccessToken();
@@ -182,9 +182,9 @@ export const socialLogin = catchAsyncErrors(
       email: string;
       avatar: string;
     };
-    const user = await userModel.findOne({ email });
+    const user = await UserModel.findOne({ email });
     if (!user) {
-      const newUser = await userModel.create({ name, email, avatar });
+      const newUser = await UserModel.create({ name, email, avatar });
       sendToken(newUser, 200, res);
     } else {
       sendToken(user, 200, res);
@@ -196,7 +196,7 @@ export const socialLogin = catchAsyncErrors(
 export const forgotPassword = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const { email } = req.body as { email: string };
-    const user = await userModel.findOne({ email });
+    const user = await UserModel.findOne({ email });
     if (!user) return next(new ErrorHandler("User not found", 404));
 
     const { resetCode, token } = createForgotPasswordToken(user);
@@ -249,7 +249,7 @@ export const resetPassword = catchAsyncErrors(
         return next(new ErrorHandler("Invalid activation code", 400));
       }
 
-      const user = await userModel.findOne({ email: newUser.user.email });
+      const user = await UserModel.findOne({ email: newUser.user.email });
 
       if (!user) {
         return next(new ErrorHandler("User not found", 404));
@@ -279,14 +279,14 @@ export const userUpdate = catchAsyncErrors(
       email?: string;
     };
 
-    const updatedUser = (await userModel.findById(user._id)) as IUser;
+    const updatedUser = (await UserModel.findById(user._id)) as IUser;
     if (name) updatedUser.name = name;
     if (email) {
-      const userExist = await userModel.findOne({ email });
+      const userExist = await UserModel.findOne({ email });
       if (userExist) return next(new ErrorHandler("Email already exists", 400));
       updatedUser.email = email;
     }
-    await redis.set(updatedUser._id, JSON.stringify(updatedUser));
+    await redis.set(`user:${updatedUser._id}`, JSON.stringify(updatedUser));
     await updatedUser.save();
 
     res.status(201).json({ success: true, updatedUser });
@@ -304,7 +304,7 @@ export const updatePassword = catchAsyncErrors(
       return next(new ErrorHandler("Please enter old and new password", 400));
     }
 
-    const user = await userModel.findById(req.user?._id).select("+password");
+    const user = await UserModel.findById(req.user?._id).select("+password");
     if (!user) return next(new ErrorHandler("User not found", 404));
 
     const isPasswordMatch = await user.comparePassword(oldPassword);
@@ -324,7 +324,7 @@ export const updateProfilePicture = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const { avatar } = req.body as { avatar: string };
     const userId = req.user?._id;
-    const user = await userModel.findById(userId);
+    const user = await UserModel.findById(userId);
     if (!user) return next(new ErrorHandler("User not found", 404));
     if (user?.avatar.public_id) {
       await cloudinary.uploader.destroy(user.avatar.public_id);
@@ -339,7 +339,7 @@ export const updateProfilePicture = catchAsyncErrors(
       url: result.secure_url,
     };
     await user.save();
-    await redis.set(user._id, JSON.stringify(user));
+    await redis.set(`user:${user._id}`, JSON.stringify(user));
 
     res.status(200).json({
       success: true,

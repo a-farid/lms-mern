@@ -14,7 +14,7 @@ export const isAuthenticated = catchAsyncErrors(
     const decoded = jwt.verify(at, process.env.ACCESS_TOKEN!) as JwtPayload;
     if (!decoded) return next(new ErrorHandler("Invalid token", 401));
 
-    const user = await redis.get(decoded.id);
+    const user = await redis.get(`user:${decoded.id}`);
     if (!user) return next(new ErrorHandler("User not found in Redis DB", 401));
 
     req.user = JSON.parse(user);

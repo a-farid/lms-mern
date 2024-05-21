@@ -1,9 +1,9 @@
 import express, { Express } from "express";
-
-// import userRouter from "./routes/user.root";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
+import morgan from "morgan";
+import helmet from "helmet";
 
 /**
  * Adds middlewares to the given express application.
@@ -11,9 +11,10 @@ import bodyParser from "body-parser";
  */
 const injectMiddlewares = (api: Express) => {
   api.use(express.json({ limit: "200mb" }));
+  api.use(morgan("dev"));
+  api.use(helmet());
   api.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
   api.use(cookieParser());
-  api.use(bodyParser.json({ limit: "50mb" }));
 };
 
 export default injectMiddlewares;

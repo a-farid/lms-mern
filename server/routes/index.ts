@@ -1,6 +1,7 @@
+import { Request, Response, NextFunction } from "express";
 import { ErrorHandlerMiddleware } from "../middleware/error";
 import userRouter from "./user.route";
-import { Express, Request, Response, NextFunction } from "express";
+import courseRouter from "./course.route";
 
 /**
  * Injects routes with their handlers to the given Express application.
@@ -8,6 +9,7 @@ import { Express, Request, Response, NextFunction } from "express";
  */
 const injectRoutes = (api: any) => {
   api.use("/api/v1/user", userRouter);
+  api.use("/api/v1/course", courseRouter);
 
   // Catch all route
   api.all("*", (req: Request, res: Response, next: NextFunction) => {
