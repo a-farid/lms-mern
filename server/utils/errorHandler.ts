@@ -31,7 +31,8 @@ class ErrorHandler extends Error {
     // Extract the file path from the stack trace
     const stackLines = this.stack?.split("\n");
     if (stackLines) {
-      console.log("ErrorPath:", stackLines[1]);
+      log.magenta("ErrorPath:", stackLines[1]);
+      log.error("Message:", this.message);
       this.filePath = stackLines[1];
     }
 

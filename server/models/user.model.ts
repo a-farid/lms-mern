@@ -62,7 +62,7 @@ const userSchema: Schema = new mongoose.Schema<IUser>(
   { timestamps: true }
 );
 
-// hashing the password before saving the user
+// hashing the password before saving the user, if the password is modified
 userSchema.pre<IUser>("save", async function (next) {
   if (!this.isModified("password")) {
     next();

@@ -1,7 +1,6 @@
 import express, { Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import bodyParser from "body-parser";
 import morgan from "morgan";
 import helmet from "helmet";
 

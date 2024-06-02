@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import CourseModel, { IComment, ICourse } from "../models/course.model";
+import CourseModel, {
+  IComment,
+  ICourse,
+  ICourseData,
+  IReview,
+} from "../models/course.model";
 import { catchAsyncErrors } from "../middleware/catchAsyncErrors";
 import cloudinary from "cloudinary";
 import { createCourse } from "../services/course.service";
@@ -11,9 +16,10 @@ import { getTsBuildInfoEmitOutputFilePath } from "typescript";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
+import UserModel from "../models/user.model";
 
-const findOne_id = (one: string, gb: any) => {
-  return gb.find((c: any) => String(c._id) === String(one));
+const findOneById = (one: string, gb: any) => {
+  return gb.find((c: any) => String(c._id) === one);
 };
 
 /**
@@ -119,28 +125,23 @@ export const getAllCourses = catchAsyncErrors(
 
 export const getCourseByUser = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userCourses = req.user?.courses;
+    const userCoursesList = req.user?.courses;
     const courseId = req.params.id;
     try {
-      const courseExist = userCourses?.find((c: any) => c._id === courseId);
+      const courseExist = findOneById(courseId, userCoursesList);
       if (!courseExist) {
-        return next(
-          new ErrorHandler(
-            "You are not eligible to access this course !!!",
-            401
-          )
-        );
+        return next(new ErrorHandler("Unauthorized to this course !!!", 401));
       }
+      const course = await CourseModel.findById(courseId);
+      if (!course) return next(new ErrorHandler("Course not found", 404));
+
+      res.status(200).json({
+        success: true,
+        course,
+      });
     } catch (error) {
       return next(new ErrorHandler("Internal error !!!", 401));
     }
-
-    const course = await CourseModel.findById(courseId);
-
-    res.status(200).json({
-      success: true,
-      course,
-    });
   }
 );
 
@@ -159,26 +160,24 @@ export const addQuestion = catchAsyncErrors(
       if (!mongo.ObjectId.isValid(courseDataId)) {
         return next(new ErrorHandler("Invalid course data id", 400));
       }
-      //   const courseData = course?.courseData?.find(
-      //       (c: any) => String(c._id) === courseDataId
-      //     );
-      const courseData = findOne_id(courseDataId, course?.courseData);
-
-      if (!courseData) {
+      const courseData: ICourseData = findOneById(
+        courseDataId,
+        course?.courseData
+      );
+      if (!courseData)
         return next(new ErrorHandler("Course data not found", 404));
-      }
+
       courseData.questions.push({
         user: req.user,
         question,
         questionReplies: [],
       } as IComment);
+
       await course.save();
-      res.status(201).json({
-        success: true,
-        course,
-      });
-    } catch (error) {
-      return next(new ErrorHandler("Internal error !!!", 401));
+      res.status(201).json({ success: true, course });
+    } catch (error: any) {
+      log.error(error.message);
+      return next(new ErrorHandler(error.message, 401));
     }
   }
 );
@@ -193,42 +192,40 @@ export const addReplyAnswer = catchAsyncErrors(
         questionId: string;
       };
       const course = await CourseModel.findById(courseId);
-      if (!course) {
-        return next(new ErrorHandler("Course not found", 404));
-      }
+      if (!course) return next(new ErrorHandler("Course not found", 404));
+
       if (!mongo.ObjectId.isValid(courseDataId)) {
         return next(new ErrorHandler("Invalid course data id", 400));
       }
-      const courseData = findOne_id(courseDataId, course?.courseData);
-
-      if (!courseData) {
+      const courseData = findOneById(courseDataId, course?.courseData);
+      if (!courseData)
         return next(new ErrorHandler("Course data not found", 404));
-      }
-      const question = findOne_id(questionId, courseData.questions);
-      if (!question) {
-        return next(new ErrorHandler("Question not found", 404));
-      }
+
+      const question = findOneById(questionId, courseData.questions);
+      if (!question) return next(new ErrorHandler("Question not found", 404));
       question.questionReplies.push({
         user: req.user,
         question: answer,
         questionReplies: [],
       } as IComment);
       await course.save();
-      if (req.user?._id === question.user._id) {
+      const userQuestion = await UserModel.findById(question.user._id);
+      if (!userQuestion) {
+        return next(new ErrorHandler("User not found", 404));
+      }
+      if (String(req.user?._id) === String(userQuestion._id)) {
         //todo: create notification
+        log.warning("User recieves a notification to his question");
       } else {
+        log.warning("User recieves an email to his question");
+
         const data = {
-          name: question.user?.name,
+          name: userQuestion.name,
           title: courseData.title,
         };
-        // const html = await ejs.renderFile(
-        //   path.join(__dirname, "../mails/question-reply.ejs"),
-        //   data
-        // );
-
         try {
           await sendMail({
-            email: question.user.email,
+            email: userQuestion.email,
             subject: `Question reply for ${courseData.title}`,
             template: "question-reply.ejs",
             data,
@@ -244,8 +241,47 @@ export const addReplyAnswer = catchAsyncErrors(
         success: true,
         course,
       });
-    } catch (error) {
-      return next(new ErrorHandler("Internal error !!!", 401));
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 401));
+    }
+  }
+);
+
+export const addReview = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userCoursesList = req.user?.courses;
+    try {
+      const { rating, comment } = req.body as {
+        rating: number;
+        comment: string;
+      };
+
+      const courseId = req.params.id;
+      const courseExist = findOneById(courseId, userCoursesList);
+      if (!courseExist) {
+        return next(
+          new ErrorHandler("Unauthorized to review this course !!!", 401)
+        );
+      }
+      const course = (await CourseModel.findById(courseId)) as ICourse;
+      if (!course) {
+        return next(new ErrorHandler("Course not found", 404));
+      }
+      const review = {
+        user: req.user,
+        rating,
+        comment,
+        commentReplies: [],
+      } as IReview;
+      await course.reviews!.push(review);
+      course.ratings =
+        course.reviews!.reduce((acc, item) => item.rating + acc, 0) /
+        course.reviews!.length;
+
+      await course.save();
+      res.status(201).json({ success: true, course });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 401));
     }
   }
 );

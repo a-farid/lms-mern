@@ -1,14 +1,14 @@
-import mongoose, { Document, Schema, Model } from "mongoose";
+import mongoose, { Document, Schema, Model, Types } from "mongoose";
 import { IUser } from "../models/user.model";
 
 export interface IComment {
   user: IUser;
   question: string;
-  questionReplies?: IComment[];
+  questionReplies: IComment[];
 }
 
-interface IReview extends Document {
-  user: mongoose.Schema.Types.ObjectId;
+export interface IReview {
+  user: IUser;
   rating: number;
   comment: string;
   commentReplies?: IComment[];
@@ -19,7 +19,7 @@ interface ILink extends Document {
   url: string;
 }
 
-interface ICourseData extends Document {
+export interface ICourseData extends Document {
   title: string;
   description: string;
   videoUrl: string;
@@ -67,7 +67,7 @@ const commentSchema = new Schema<IComment>({
     type: String,
     required: true,
   },
-  questionReplies: [this], // nested comments
+  questionReplies: [this],
 });
 
 const reviewSchema = new Schema<IReview>({
@@ -79,6 +79,8 @@ const reviewSchema = new Schema<IReview>({
   rating: {
     type: Number,
     default: 0,
+    min: 0,
+    max: 5,
   },
   comment: {
     type: String,
