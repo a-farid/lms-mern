@@ -58,24 +58,13 @@ export interface ICourse extends Document {
 }
 
 const commentSchema = new Schema<IComment>({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  question: {
-    type: String,
-    required: true,
-  },
+  user: Object,
+  question: String,
   questionReplies: [this],
 });
 
 const reviewSchema = new Schema<IReview>({
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+  user: Object,
   rating: {
     type: Number,
     default: 0,
@@ -121,10 +110,7 @@ const courseSchema = new Schema<ICourse>({
   description: { type: String, required: true },
   price: { type: Number, required: true },
   estimated: { type: Number },
-  thumbnail: {
-    public_id: String,
-    url: String,
-  },
+  thumbnail: { public_id: String, url: String },
   tags: { type: String, required: true },
   level: { type: String, required: true },
   demoUrl: { type: String, required: true },

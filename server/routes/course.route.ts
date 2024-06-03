@@ -2,6 +2,7 @@ import express, { Express } from "express";
 import {
   addQuestion,
   addReplyAnswer,
+  addReplyReview,
   addReview,
   getAllCourses,
   getCourseByUser,
@@ -32,5 +33,11 @@ courseRouter.get("/all", isAuthenticated, getAllCourses);
 courseRouter.put("/add-question", isAuthenticated, addQuestion);
 courseRouter.put("/add-answer", isAuthenticated, addReplyAnswer);
 courseRouter.put("/add-review/:id", isAuthenticated, addReview);
+courseRouter.put(
+  "/add-review-reply/:id",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  addReplyReview
+);
 
 export default courseRouter;

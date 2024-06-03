@@ -8,10 +8,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  avatar: {
-    url: string;
-    public_id: string;
-  };
+  avatar: { url: string; public_id: string };
   role: string;
   isVerified: boolean;
   courses: Array<{ courseId: string }>;

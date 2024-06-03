@@ -17,10 +17,7 @@ import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
 import UserModel from "../models/user.model";
-
-const findOneById = (one: string, gb: any) => {
-  return gb.find((c: any) => String(c._id) === one);
-};
+import { findOneById } from "../services/custom.service";
 
 /**
  * Registers a new course.
@@ -209,23 +206,20 @@ export const addReplyAnswer = catchAsyncErrors(
         questionReplies: [],
       } as IComment);
       await course.save();
-      const userQuestion = await UserModel.findById(question.user._id);
-      if (!userQuestion) {
-        return next(new ErrorHandler("User not found", 404));
-      }
-      if (String(req.user?._id) === String(userQuestion._id)) {
+
+      if (String(req.user?._id) === String(question.user._id)) {
         //todo: create notification
         log.warning("User recieves a notification to his question");
       } else {
         log.warning("User recieves an email to his question");
 
         const data = {
-          name: userQuestion.name,
+          name: question.user.name,
           title: courseData.title,
         };
         try {
           await sendMail({
-            email: userQuestion.email,
+            email: question.user.email,
             subject: `Question reply for ${courseData.title}`,
             template: "question-reply.ejs",
             data,
@@ -280,6 +274,37 @@ export const addReview = catchAsyncErrors(
 
       await course.save();
       res.status(201).json({ success: true, course });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 401));
+    }
+  }
+);
+
+export const addReplyReview = catchAsyncErrors(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { question, courseId, reviewId } = req.body as {
+        courseId: string;
+        question: string;
+        reviewId: string;
+      };
+      const course = await CourseModel.findById(courseId);
+      if (!course) return next(new ErrorHandler("Course not found", 404));
+
+      const review = findOneById(reviewId, course?.reviews);
+      if (!review) return next(new ErrorHandler("Review not found", 404));
+
+      review.commentReplies.push({
+        user: req.user,
+        question,
+        questionReplies: [],
+      } as IComment);
+
+      await course.save();
+      return res.status(201).json({
+        success: true,
+        course,
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 401));
     }
