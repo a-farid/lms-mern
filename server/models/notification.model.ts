@@ -5,6 +5,8 @@ export interface INotification extends Document {
   title: string;
   message: string;
   status: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const notificationSchema = new Schema<INotification>(
@@ -34,7 +36,7 @@ const notificationSchema = new Schema<INotification>(
 );
 
 const NotificationModel: Model<INotification> = mongoose.model(
-  "Order",
+  "Notification",
   notificationSchema
 );
 

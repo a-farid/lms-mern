@@ -8,16 +8,12 @@ import CourseModel, {
 import { catchAsyncErrors } from "../middleware/catchAsyncErrors";
 import cloudinary from "cloudinary";
 import { createCourse } from "../services/course.service";
-import { count, dir } from "console";
 import { redis } from "../utils/redis";
 import ErrorHandler from "../utils/errorHandler";
 import { mongo } from "mongoose";
-import { getTsBuildInfoEmitOutputFilePath } from "typescript";
-import ejs from "ejs";
-import path from "path";
 import sendMail from "../utils/sendMail";
-import UserModel from "../models/user.model";
 import { findOneById } from "../services/custom.service";
+import { sendNotif, sendNotifToAdmins } from "../services/notification.service";
 
 /**
  * Registers a new course.
@@ -170,6 +166,11 @@ export const addQuestion = catchAsyncErrors(
         questionReplies: [],
       } as IComment);
 
+      sendNotifToAdmins(
+        "New question",
+        `There is a new question on the course ${courseData.title}`
+      );
+
       await course.save();
       res.status(201).json({ success: true, course });
     } catch (error: any) {
@@ -200,12 +201,19 @@ export const addReplyAnswer = catchAsyncErrors(
 
       const question = findOneById(questionId, courseData.questions);
       if (!question) return next(new ErrorHandler("Question not found", 404));
+      question.userId;
       question.questionReplies.push({
         user: req.user,
         question: answer,
         questionReplies: [],
       } as IComment);
       await course.save();
+
+      sendNotif(
+        question.userId,
+        "Question Reply",
+        "You have a new reply on your question by the instructor"
+      );
 
       if (String(req.user?._id) === String(question.user._id)) {
         //todo: create notification
