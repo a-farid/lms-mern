@@ -6,6 +6,7 @@ import {
   addReview,
   deleteCourse,
   getAllCourses,
+  getAllCoursesContent,
   getCourseByUser,
   getSingleCourse,
   updateCourse,
@@ -17,10 +18,16 @@ const courseRouter = express.Router();
 
 courseRouter.post("/create", Auth, authorizeRoles("admin"), uploadCourse);
 courseRouter.put("/update/:id", Auth, authorizeRoles("admin"), updateCourse);
-courseRouter.get("/preview/:id", Auth, getSingleCourse);
-courseRouter.get("/:id", Auth, getCourseByUser);
-courseRouter.get("/all", Auth, getAllCourses);
+courseRouter.get("/preview/one/:id", Auth, getSingleCourse);
+courseRouter.get("/content/one/:id", Auth, getCourseByUser);
 courseRouter.put("/add-question", Auth, addQuestion);
+courseRouter.get("/preview/all", Auth, getAllCourses);
+courseRouter.get(
+  "/content/all",
+  Auth,
+  authorizeRoles("admin"),
+  getAllCoursesContent
+);
 courseRouter.put("/add-answer", Auth, addReplyAnswer);
 courseRouter.put("/add-review/:id", Auth, addReview);
 courseRouter.delete("/:id", Auth, authorizeRoles("admin"), deleteCourse);
