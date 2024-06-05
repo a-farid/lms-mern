@@ -6,7 +6,8 @@ import NotificationModel from "../models/notification.model";
 import ErrorHandler from "../utils/errorHandler";
 import { catchAsyncErrors as Catch } from "../middleware/catchAsyncErrors";
 import sendMail from "../utils/sendMail";
-import { sendNotification } from "../services/notification.service";
+import { sendNotif } from "../services/notification.service";
+import { getAllOrders } from "../services/order.service";
 
 export const createOrder = Catch(async (req: Req, res: Res, next: Next) => {
   try {
@@ -55,8 +56,8 @@ export const createOrder = Catch(async (req: Req, res: Res, next: Next) => {
 
     course.perchased += 1;
     await course.save();
-    sendNotification(
-      user,
+    sendNotif(
+      user._id,
       "Course Purchased",
       `You have successfully purchased ${course.name}`
     );
@@ -65,6 +66,14 @@ export const createOrder = Catch(async (req: Req, res: Res, next: Next) => {
       success: true,
       order,
     });
+  } catch (error: any) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const getOrders = Catch(async (req: Req, res: Res, next: Next) => {
+  try {
+    getAllOrders(res);
   } catch (error: any) {
     return next(new ErrorHandler(error.message, 400));
   }
