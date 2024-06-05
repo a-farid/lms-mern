@@ -116,8 +116,18 @@ export const getAllCourses = Catch(async (req: Req, res: Res, next: Next) => {
 export const getCourseByUser = Catch(async (req: Req, res: Res, next: Next) => {
   const userCoursesList = req.user?.courses;
   const courseId = req.params.id;
+  log.gray("User courses list", req.user);
   try {
-    const courseExist = findOneById(courseId, userCoursesList);
+    if (!userCoursesList) {
+      return next(new ErrorHandler("Unauthorized to this course !!!", 401));
+    }
+    // for (let i = 0; i < userCoursesList.length; i++) {
+    //   log.gray("User courses list", userCoursesList[i].courseId);
+    // }
+    const courseExist = userCoursesList.find(
+      (c: any) => String(c.courseId) === courseId
+    );
+    log.gray("User courses list", courseExist);
     if (!courseExist) {
       return next(new ErrorHandler("Unauthorized to this course !!!", 401));
     }

@@ -17,8 +17,8 @@ const courseRouter = express.Router();
 
 courseRouter.post("/create", Auth, authorizeRoles("admin"), uploadCourse);
 courseRouter.put("/update/:id", Auth, authorizeRoles("admin"), updateCourse);
-courseRouter.get("/one/:id", Auth, getSingleCourse);
-courseRouter.get("/content/:id", Auth, getCourseByUser);
+courseRouter.get("/preview/:id", Auth, getSingleCourse);
+courseRouter.get("/:id", Auth, getCourseByUser);
 courseRouter.get("/all", Auth, getAllCourses);
 courseRouter.put("/add-question", Auth, addQuestion);
 courseRouter.put("/add-answer", Auth, addReplyAnswer);
