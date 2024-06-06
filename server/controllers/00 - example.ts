@@ -5,6 +5,7 @@ import CourseModel, { ICourse } from "../models/course.model";
 import NotificationModel, { INotification } from "../models/notification.model";
 import ErrorHandler from "../utils/errorHandler";
 import { catchAsyncErrors as Catch } from "../middleware/catchAsyncErrors";
+import { v2 as cloudinary } from "cloudinary";
 import ejs from "ejs";
 import path from "path";
 import sendMail from "../utils/sendMail";
