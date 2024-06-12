@@ -15,7 +15,12 @@ export const isAuthenticated = catchAsyncErrors(
     if (!decoded) return next(new ErrorHandler("Invalid token", 401));
 
     const user = await redis.get(`user:${decoded.id}`);
-    if (!user) return next(new ErrorHandler("User not found in Redis DB", 401));
+    if (!user) {
+      log.error("User not found in redis", `user:${decoded.id}`);
+      return next(
+        new ErrorHandler("Please login to acces this ressource", 401)
+      );
+    }
 
     req.user = JSON.parse(user);
     next();

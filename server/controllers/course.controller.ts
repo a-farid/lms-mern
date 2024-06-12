@@ -70,11 +70,9 @@ export const updateCourse = Catch(async (req: Req, res: Res, next: Next) => {
 // Get a course without content
 export const getSingleCourse = Catch(async (req: Req, res: Res, next: Next) => {
   const courseId = req.params.id;
-  const cacheKey = `course:${courseId}`;
-  const cacheTTL = 7 * 24 * 60 * 60; // 7 days in seconds
 
   // Check if course exists in Redis cache
-  const cachedCourse = await redis.get(cacheKey);
+  const cachedCourse = await redis.get(`course:${courseId}`);
   if (cachedCourse) {
     return res.status(200).json({
       success: true,
@@ -87,12 +85,15 @@ export const getSingleCourse = Catch(async (req: Req, res: Res, next: Next) => {
     "-courseData.videoUrl -courseData.suggestions -courseData.links -courseData.questions"
   );
 
-  if (!course) {
-    return next(new ErrorHandler("Course not found", 404));
-  }
+  if (!course) return next(new ErrorHandler("Course not found", 404));
 
   // Store the course in Redis cache with TTL
-  await redis.set(cacheKey, JSON.stringify(course), "EX", cacheTTL);
+  await redis.set(
+    `course:${courseId}`,
+    JSON.stringify(course),
+    "EX",
+    Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+  );
 
   return res.status(200).json({
     success: true,
@@ -103,14 +104,28 @@ export const getSingleCourse = Catch(async (req: Req, res: Res, next: Next) => {
 // Get all courses without content
 export const getAllCourses = Catch(async (req: Req, res: Res, next: Next) => {
   try {
-    const courses = await CourseModel.find().select(
-      "-courseData.videoUrl -courseData.suggestions -courseData.links -courseData.questions"
-    );
-    res.status(200).json({
-      success: true,
-      count: courses.length,
-      courses,
-    });
+    const isCoursesCashed = await redis.get("allCourses");
+    if (isCoursesCashed) {
+      return res.status(200).json({
+        success: true,
+        courses: JSON.parse(isCoursesCashed),
+      });
+    } else {
+      const courses = await CourseModel.find().select(
+        "-courseData.videoUrl -courseData.suggestions -courseData.links -courseData.questions"
+      );
+      await redis.set(
+        "allCourses",
+        JSON.stringify(courses),
+        "EX",
+        Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+      );
+      res.status(200).json({
+        success: true,
+        count: courses.length,
+        courses,
+      });
+    }
   } catch (error: any) {
     return next(new ErrorHandler(error.message, 401));
   }
@@ -119,12 +134,26 @@ export const getAllCourses = Catch(async (req: Req, res: Res, next: Next) => {
 export const getAllCoursesContent = Catch(
   async (req: Req, res: Res, next: Next) => {
     try {
-      const courses = await CourseModel.find();
-      res.status(200).json({
-        success: true,
-        count: courses.length,
-        courses,
-      });
+      const isCoursesCashed = await redis.get("allCoursesContent");
+      if (isCoursesCashed) {
+        return res.status(200).json({
+          success: true,
+          courses: JSON.parse(isCoursesCashed),
+        });
+      } else {
+        const courses = await CourseModel.find();
+        await redis.set(
+          "allCoursesContent",
+          JSON.stringify(courses),
+          "EX",
+          Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+        );
+        res.status(200).json({
+          success: true,
+          count: courses.length,
+          courses,
+        });
+      }
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 401));
     }

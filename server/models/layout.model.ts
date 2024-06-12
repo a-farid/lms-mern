@@ -1,10 +1,10 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
 
 interface IFaq extends Document {
-  question: string;
-  answer: string;
+  question: "string";
+  answer: "string";
 }
-interface ICategory extends Document {
+interface ICategory {
   name: string;
 }
 interface BannerImage {
@@ -12,19 +12,13 @@ interface BannerImage {
   url: string;
 }
 
-const faqSchema = new Schema<IFaq>(
-  {
-    question: { type: String },
-    answer: { type: String },
-  },
-  { timestamps: true }
-);
-const categorySchema = new Schema<ICategory>(
-  {
-    name: { type: String },
-  },
-  { timestamps: true }
-);
+const faqSchema = new Schema<IFaq>({
+  question: { type: String },
+  answer: { type: String },
+});
+const categorySchema = new Schema<ICategory>({
+  name: { type: String },
+});
 
 export interface ILayout extends Document {
   type: string;

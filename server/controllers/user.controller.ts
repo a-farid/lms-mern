@@ -138,17 +138,31 @@ export const updateToken = Catch(async (req: Req, res: Res, next: Next) => {
   )) as { id: string };
   if (!decoded) return next(new ErrorHandler("Invalid token", 401));
 
-  const redisUser = await redis.get(`user:${decoded.id}`);
-  const user = await UserModel.findById(decoded.id);
-  if (!user) return next(new ErrorHandler("User not found", 404));
+  // const user = await UserModel.findById(decoded.id);
+  const session = await redis.get(`user:${decoded.id}`);
+  if (!session)
+    return next(new ErrorHandler("Please login to access this route", 404));
 
-  const accessToken = user.SignAccessToken();
-  const refreshToken = user.SignRefreshToken();
+  const user = JSON.parse(session) as IUser;
 
-  req.user = user;
+  // const accessToken = user.SignAccessToken();
+  // const refreshToken = user.SignRefreshToken();
+  const accessToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN!, {
+    expiresIn: `${process.env.ACCESS_TOKEN_EXPIRE!}m`,
+  });
+  const refreshToken = jwt.sign({ id: user._id }, process.env.REFRESH_TOKEN!, {
+    expiresIn: `${process.env.REFRESH_TOKEN_EXPIRE!}d`,
+  });
 
   res.cookie("access_Token", accessToken, accessTokenOptions);
   res.cookie("refresh_Token", refreshToken, refreshTokenOptions);
+
+  await redis.set(
+    `user:${user._id}`,
+    JSON.stringify(user),
+    "EX",
+    Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+  );
 
   res.status(200).json({ success: true, accessToken });
 });
@@ -266,7 +280,12 @@ export const userUpdate = Catch(async (req: Req, res: Res, next: Next) => {
     if (userExist) return next(new ErrorHandler("Email already exists", 400));
     updatedUser.email = email;
   }
-  await redis.set(`user:${updatedUser._id}`, JSON.stringify(updatedUser));
+  await redis.set(
+    `user:${updatedUser._id}`,
+    JSON.stringify(updatedUser),
+    "EX",
+    Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+  );
   await updatedUser.save();
 
   res.status(201).json({ success: true, updatedUser });
@@ -315,7 +334,12 @@ export const updateAvatar = Catch(async (req: Req, res: Res, next: Next) => {
     url: result.secure_url,
   };
   await user.save();
-  await redis.set(`user:${user._id}`, JSON.stringify(user));
+  await redis.set(
+    `user:${user._id}`,
+    JSON.stringify(user),
+    "EX",
+    Number(process.env.REFRESH_TOKEN_EXPIRE!) * 24 * 60 * 60
+  );
 
   res.status(200).json({
     success: true,
