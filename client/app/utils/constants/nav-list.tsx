@@ -1,4 +1,4 @@
-export const NavItems = [
+export const navbar_list = [
   {
     name: "Home",
     link: "/",

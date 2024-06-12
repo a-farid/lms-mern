@@ -1,4 +1,3 @@
-import { Poppins } from "next/font/google";
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -25,6 +24,18 @@ const config: Config = {
         "1500px": "1500px",
         "800px": "800px",
         "400px": "400px",
+      },
+      colors: {
+        transparent: "transparent",
+        current: "currentColor",
+        white: "#ffffff",
+        purple: "#3f3cbb",
+        midnight: "#121063",
+        metal: "#565584",
+        tahiti: "#3ab7bf",
+        silver: "#ecebff",
+        bubble: "#ff77e9",
+        bermuda: "#78dcca",
       },
     },
   },

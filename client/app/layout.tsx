@@ -1,7 +1,7 @@
 import { Poppins, Josefin_Sans } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./utils/theme-provider";
-import { Header } from "./components/Header";
+import { ThemeProvider } from "./components/providers/theme-provider";
+import ToastProvider from "./components/providers/toaster-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -22,8 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${poppins.variable} ${josefin.variable} bg-gray-50 dark:bg-slate-800 bg-no-repeat dark:bg-gradient-to-b dark:from-gray-900 dark:to-dark-800 duration-300 dark:text-white text-black transition-colors `}
+        className={`${poppins.variable} ${josefin.variable} bg-gray-50 bg-no-repeat dark:bg-gradient-to-b dark:from-gray-900 dark:to-gray-700 duration-300 dark:text-white text-black transition-colors h-screen `}
       >
+        <ToastProvider />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
