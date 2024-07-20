@@ -7,6 +7,7 @@ import ErrorHandler from "../utils/errorHandler";
 export const isAuthenticated = catchAsyncErrors(
   async (req: Request, res: Response, next: NextFunction) => {
     const at = req.cookies.access_Token;
+    console.log("The user is authenticated");
     if (!at) {
       return next(new ErrorHandler("Login first to access this resource", 401));
     }

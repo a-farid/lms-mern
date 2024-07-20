@@ -44,8 +44,9 @@ export const userRegister = Catch(async (req: Req, res: Res, next: Next) => {
       });
       res.status(201).json({
         success: true,
-        message: `Account registered successfully. Please check your email ${user.email} to activate your account`,
+        message: `Account registered successfully. check your email`,
         activationToken: token,
+        activationCodeTemp: activationCode,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
@@ -68,7 +69,7 @@ export const userActivation = Catch(async (req: Req, res: Res, next: Next) => {
   try {
     const newUser: { user: IuserRegister; activationCode: string } = jwt.verify(
       activationToken,
-      process.env.ACTIVATION_SECRET!
+      process.env.JWT_SECRET!
     ) as {
       user: IuserRegister;
       activationCode: string;
@@ -76,7 +77,7 @@ export const userActivation = Catch(async (req: Req, res: Res, next: Next) => {
     if (!newUser) {
       return next(new ErrorHandler("Invalid activation token", 400));
     }
-    if (newUser.activationCode !== activationCode) {
+    if (Number(newUser.activationCode) !== Number(activationCode)) {
       return next(new ErrorHandler("Invalid activation code", 400));
     }
 
@@ -129,6 +130,7 @@ export const userLogout = Catch(async (req: Req, res: Res, next: Next) => {
 // Refresh access token: /api/user/refresh
 export const updateToken = Catch(async (req: Req, res: Res, next: Next) => {
   const refresh_token = req.cookies.refresh_Token;
+  console.log("Cookies in refresh", req.cookies);
   if (!refresh_token) {
     return next(new ErrorHandler("Please login to access this resource", 401));
   }
@@ -348,8 +350,6 @@ export const updateAvatar = Catch(async (req: Req, res: Res, next: Next) => {
   });
 });
 
-// Delete user: /api/user/:id (admin)
-
 // Get all users: /api/user/all (admin)
 export const getAllUsers = Catch(async (req: Req, res: Res, next: Next) => {
   try {
@@ -369,6 +369,8 @@ export const updateRole = Catch(async (req: Req, res: Res, next: Next) => {
     return next(new ErrorHandler(error.message, 500));
   }
 });
+
+// Delete user
 export const deleteUser = Catch(async (req: Req, res: Res, next: Next) => {
   try {
     const { userId } = req.body as { userId: string };

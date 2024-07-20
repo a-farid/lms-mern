@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { IUser } from "../models/user.model";
 import { Response } from "express";
 import { redis } from "./redis";
+require("dotenv").config();
 
 export interface IuserRegister {
   name: string;
@@ -39,12 +40,11 @@ export const createActivationToken = (
   token: string;
 } => {
   const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-  const token = jwt.sign(
-    { user, activationCode },
-    process.env.ACTIVATION_SECRET!,
-    { expiresIn: process.env.ACTIVATION_EXPIRE! }
-  );
+  const activationSecret = process.env.JWT_SECRET!;
+  console.log("activationSecret", activationSecret);
+  const token = jwt.sign({ user, activationCode }, process.env.JWT_SECRET!, {
+    expiresIn: process.env.ACTIVATION_EXPIRE!,
+  });
 
   return { token, activationCode };
 };

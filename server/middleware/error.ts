@@ -30,7 +30,7 @@ export const ErrorHandlerMiddleware = (
   }
   res.status(err.statusCode).json({
     success: false,
-    error: err.message,
+    message: err.message,
     path: process.env.NODE_ENV == "development" ? err.filePath : "Unknown",
   });
 };

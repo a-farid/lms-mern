@@ -32,22 +32,9 @@ class ErrorHandler extends Error {
     const stackLines = this.stack?.split("\n");
     if (stackLines) {
       log.magenta("ErrorPath:", stackLines[1]);
-      log.error("Message:", this.message);
+      log.error("message:", this.message);
       this.filePath = stackLines[1];
     }
-
-    // if (stackLines && stackLines.length > 1) {
-    //   const callerLine = stackLines[1];
-    //   const match = callerLine.match(/\((.*):(\d+):(\d+)\)/);
-    //   // console.log(match);
-    //   if (match) {
-    //     this.filePath = match[1]; // Extracted file path
-    //   } else {
-    //     this.filePath = "unknown";
-    //   }
-    // } else {
-    //   this.filePath = "unknown";
-    // }
   }
 }
 
